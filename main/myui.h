@@ -14,6 +14,19 @@
 #define PAGE_PTOTAL    8
 #define PAGE_RANKING   9
 #define PAGE_CWAITING  10
+#define PAGE_TIPs      11
+
+#define KEYV_Y          1
+#define KEYV_N          2
+#define KEYV_U          3
+
+#define AUDIO_NULL      0
+#define AUDIO_1         1
+#define AUDIO_2         2
+#define AUDIO_3         3
+#define AUDIO_4         4
+
+
 
 #define DIR_EAST       1
 #define DIR_SOUTH      2
@@ -30,6 +43,9 @@ typedef struct {
     char game_mode;//游戏模式  0:单机    1:智能
     bool wifi_connect_state;//wifi连接状态
     bool server_connect_state;//server连接状态
+	char wifissid[30];
+	
+	bool wifi_datasave ;
     char QR_link[100] ;//二维码链接
     char standard_score[4][4];//东南西北标准分
     char match_score[4][4];//东南西北比赛分
@@ -40,6 +56,8 @@ typedef struct {
     char current_page;//当前页面   0:初始化页码
     unsigned int confirm_num :4 ;//已确认分数个数  1111 全部确认 0000 都没确认
     char current_game_score[4][4];//当前盘数的分数
+	char current_keyV[4];//当前各个方位的按键状态  1 确认  2 有异议 3 不确定还没有按键  
+	char current_audio;
 
 }struct_majiang;
 
@@ -67,6 +85,9 @@ void drawscore (char t1[][MAXCHARNUM]);
 void drawwaiting (void);
 void drawmodify1 (void);
 void drawmodify(void);
+
+void clear_screenmain();
+void clear_status_bar();
 
 
 

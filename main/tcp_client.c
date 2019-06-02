@@ -13,6 +13,9 @@
 #include "freertos/event_groups.h"
 #include "esp_freertos_hooks.h"
 
+#include "esp_task_wdt.h"
+
+
 #include "esp_system.h"
 #include "esp_wifi.h"
 #include "esp_event_loop.h"
@@ -78,8 +81,8 @@ unsigned char wifi_flag_nvs = 0 ;
 
 
 #ifdef CONFIG_EXAMPLE_IPV4
-//#define HOST_IP_ADDR "192.168.1.18"
-#define HOST_IP_ADDR "172.20.200.67"
+//#define HOST_IP_ADDR "192.168.1.100"
+#define HOST_IP_ADDR "172.20.200.41"
 
 //#define HOST_IP_ADDR CONFIG_EXAMPLE_IPV4_ADDR
 
@@ -124,8 +127,8 @@ void ledpwm(void *pvParameters);
 
 
 #define STORAGE_NAMESPACE "storage"
-char *strwifissid="wssid";
-char *strwifipass="wpass";
+char *strwifissid="w12id";
+char *strwifipass="f34ss";
 
 
 /* Save the number of module restarts in NVS
@@ -244,22 +247,18 @@ static void initialise_wifi(void)
 	
 
 	esp_err_t err;
+	majiang.wifi_datasave = false;
 	
-	
-           /*
+      
             
-			*/
+			
+			
 	err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &my_handle1);
     if (err != ESP_OK) {
         ESP_LOGE(TAG, "opening NVS Error (%s)!\n", esp_err_to_name(err));
     } else {
 		ESP_LOGI(TAG, "NVS open OK");
 
-/*
-		int32_t restart_counter=0;
-        err = nvs_set_i32(my_handle, "restart_counter", restart_counter);
-        printf((err != ESP_OK) ? "Failed!\n" : "Done\n");
-*/
 		size_t required_size;
 		err = nvs_get_str(my_handle1, strwifissid, NULL, &required_size);
 		if(err==ESP_OK)
@@ -267,15 +266,7 @@ static void initialise_wifi(void)
 			mywifissid1 = malloc(required_size);
 			nvs_get_str(my_handle1, strwifissid, mywifissid1, &required_size);
 			wifi_flag_nvs = 1 ;
-		}/*
-		err = nvs_get_str (my_handle1, strwifissid,str_valuessid, &len);//100是读取最大长度
-		if(err==ESP_OK)
-		{
-			wifi_flag_nvs = 1 ;
-			//ESP_LOGI(TAGsc, "SSID:%s", wifi_config->sta.ssid);
-            //ESP_LOGI(TAGsc, "PASSWORD:%s", wifi_config->sta.password);
-			//ESP_LOGI(TAG, "mywifissid = %s\n", wifi_config->sta.ssid);
-    	}*/
+		}
 		else
 		{
 			wifi_flag_nvs = 0 ;
@@ -289,22 +280,29 @@ static void initialise_wifi(void)
 		{
 			mywifipass1 = malloc(required_size);
 			nvs_get_str(my_handle1, strwifipass, mywifipass1, &required_size);
-			if(wifi_flag_nvs==1)wifi_flag_nvs = 2 ;
+			if(wifi_flag_nvs==1)wifi_flag_nvs = 2 ;//2
+			
+			memset(majiang.wifissid,0,sizeof(majiang.wifissid));
+			sprintf( majiang.wifissid,"%s",mywifissid1);
+			ESP_LOGI(TAG,"majiang.wifissid :%s\n",majiang.wifissid);
 		}
 		
 		else
 		{
 			wifi_flag_nvs = 0 ;
+			majiang.wifi_datasave = false;
 			 ESP_LOGI(TAG,"Error (%s) reading!\n", esp_err_to_name(err));
 		}
     }
 	nvs_close(my_handle1);
+	
 
+	//ESP_ERR_NVS_NOT_FOUND
 
 ////////
 	if(wifi_flag_nvs == 2)
 	{
-
+		majiang.wifi_datasave = true;
 		tcpip_adapter_init();
 		wifi_event_group = xEventGroupCreate();
 		ESP_ERROR_CHECK( esp_event_loop_init(event_handler12, NULL) );
@@ -405,6 +403,12 @@ static void sc_callback(smartconfig_status_t status, void *pdata)
 			memset(str_valuepass, 0, 32);
 			
 			
+			memset(majiang.wifissid,0,sizeof(majiang.wifissid));
+			sprintf( majiang.wifissid,"%s",wifi_config->sta.ssid);
+
+			ESP_LOGI(TAG, "majiang.wifissid!!!!%s",majiang.wifissid);
+            	
+			
 			sprintf( str_valuessid,"%s",wifi_config->sta.ssid);
 			sprintf(str_valuepass,"%s",wifi_config->sta.password);
 			ESP_LOGI(TAG, "save_valuepass len = %d",strlen(str_valuepass));
@@ -414,18 +418,18 @@ static void sc_callback(smartconfig_status_t status, void *pdata)
 			if(save_wifi_pass((char *)str_valuepass) == ESP_OK)
 			{
 				ESP_LOGI(TAG, "save wifi pass ok!!!!%s",str_valuepass);
-            
+            	
 			}
 			else
 			{
 				ESP_LOGI(TAG, "save wifi pass faile!!!!!!!!!");
-            
+            	
 			}
 			str_valuessid[strlen(str_valuessid)] = 0 ;
 			if(save_wifi_ssid((char *)str_valuessid) == ESP_OK)
 			{
 				ESP_LOGI(TAG, "save wifi ssid ok!!!!%s",str_valuessid);
-            
+            	majiang.wifi_datasave = true;
 			}
 			else
 			{
@@ -433,10 +437,10 @@ static void sc_callback(smartconfig_status_t status, void *pdata)
             
 			}
 			
-			
-            ESP_ERROR_CHECK( esp_wifi_disconnect() );
-            ESP_ERROR_CHECK( esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_config) );
-            ESP_ERROR_CHECK( esp_wifi_connect() );
+			 
+            ESP_ERROR_CHECK(esp_wifi_disconnect());
+            ESP_ERROR_CHECK(esp_wifi_set_config(ESP_IF_WIFI_STA, wifi_config)  );
+            ESP_ERROR_CHECK(esp_wifi_connect()  );
             break;
         case SC_STATUS_LINK_OVER:
             ESP_LOGI(TAGsc, "SC_STATUS_LINK_OVER");
@@ -523,7 +527,7 @@ static esp_err_t event_handler12(void *ctx, system_event_t *event)
         xEventGroupSetBits(wifi_event_group, IPV4_GOTIP_BIT);
         ESP_LOGI(TAG, "SYSTEM_EVENT_STA_GOT_IP");
 		ESP_LOGI(TAG, "got ip:%s",
-                 ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
+        ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
 		wifi_set_stat(true);
         break;
     case SYSTEM_EVENT_STA_DISCONNECTED:
@@ -626,8 +630,9 @@ static void tcp_client_task(void *pvParameters)
         }
         ESP_LOGI(TAG, "Successfully connected");
 		server_set_stat(true);//连接状态
+		tcpdataretrun("A006");
         while (1) {
-			
+			 
 			if(xQueueReceive(Queue_Tcpsenddata, tx_buffer, 10) == pdPASS) {
 				int err = send(sock, tx_buffer, strlen(tx_buffer), 0);
 				if (err < 0) {
@@ -635,38 +640,45 @@ static void tcp_client_task(void *pvParameters)
 					break;
 				}
 			}
-            
- 
-            int len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);
-            // Error occured during receiving
-            if (len < 0) {
-                ESP_LOGE(TAG, "recv failed: errno %d", errno);
-                break;
-            }
-            // Data received
-            else {
-                rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
-                ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
-                ESP_LOGI(TAG, "%s", rx_buffer);
-				//接收到的数据发送到接收消息队列
-				if(len>0)
-					xQueueSend(Queue_Tcprecvdata, (void*)rx_buffer, (TickType_t) 10);
-				else 
-					tcpdataretrun("A006");
-				//cjson_to_struct_info(rx_buffer);
-				
-				//freq_hz1 = rx_buffer[0]*1000+rx_buffer[1]*100 +rx_buffer[2]*10+rx_buffer[3];
-				
-				//if(freq_hz1>9999) freq_hz1 = 9999;
-				
-				//pwmduty = rx_buffer[0]*100;
-				//if(pwmduty>1000)pwmduty = 1000;
-				//if(pwmduty>10000) = 10000
-				//pwmduty = rx_buffer[0]*100;
-				//if(pwmduty>1000)pwmduty = 1000;
-				//if(pwmduty>10000) = 10000
-            }
-             
+			 
+            int len = 0 ;
+			
+			 	//消息队列剩余大小
+			uint8_t msgq_remain_size=uxQueueSpacesAvailable(Queue_Tcprecvdata);//得到队列剩余大小
+			
+			printf("@@@@@@@@@tcprx_size = %d\n",msgq_remain_size);
+			if(msgq_remain_size>0)
+			{
+				len = recv(sock, rx_buffer, sizeof(rx_buffer) - 1, 0);
+				// Error occured during receiving
+				if (len < 0) {
+					ESP_LOGE(TAG, "recv failed: errno %d", errno);
+					break;
+				}
+				// Data received
+				else {
+					rx_buffer[len] = 0; // Null-terminate whatever we received and treat like a string
+					ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
+					ESP_LOGI(TAG, "%s", rx_buffer);
+					//接收到的数据发送到接收消息队列
+					if(len>0)
+						xQueueSend(Queue_Tcprecvdata, (void*)rx_buffer, (TickType_t) 10);
+					else 
+						tcpdataretrun("A006");
+					//cjson_to_struct_info(rx_buffer);
+					
+					//freq_hz1 = rx_buffer[0]*1000+rx_buffer[1]*100 +rx_buffer[2]*10+rx_buffer[3];
+					
+					//if(freq_hz1>9999) freq_hz1 = 9999;
+					
+					//pwmduty = rx_buffer[0]*100;
+					//if(pwmduty>1000)pwmduty = 1000;
+					//if(pwmduty>10000) = 10000
+					//pwmduty = rx_buffer[0]*100;
+					//if(pwmduty>1000)pwmduty = 1000;
+					//if(pwmduty>10000) = 10000
+				}
+			}
 
             vTaskDelay(100 / portTICK_PERIOD_MS);
         }
@@ -747,11 +759,35 @@ void ledpwm(void *pvParameters)
 
 	ledc_fade_func_install(0);
 
+	while(wifi_flag_nvs != 3)
+	{
+		ESP_LOGI(TAG, "======.");
+		vTaskDelay(1000 / portTICK_RATE_MS);
+	}
+	///////////////////////////
+	 
+			if (TcprecvdataQueueCreate() == ESP_OK)
+				ESP_LOGI(TAG, "TcpdataQueueCreate  created.");
+			else ESP_LOGE(TAG, "Failed to TcpdataQueueCreate.");
+			if (TcpsenddataQueueCreate() == ESP_OK)
+				ESP_LOGI(TAG, "TcpsenddataQueueCreate  created.");
+			else ESP_LOGE(TAG, "Failed to TcpsenddataQueueCreate.");
+			
+			if(	xTaskCreate(dataHandle_task, "dataHandle", 20480, NULL, 4, NULL)==pdPASS)
+		  		ESP_LOGI(TAG, "dataHandle_task create created....");
+			else
+				ESP_LOGI(TAG, "dataHandle_task create faile....");
+		
+			//vTaskDelay(50 / portTICK_RATE_MS);
+			
+		ESP_LOGI("== ==5", "memory: %d bytes", esp_get_free_heap_size());
+			/////////////////////
+	//vTaskDelay(5000/ portTICK_RATE_MS);
  
 	ESP_LOGI(TAG, "wait_for_con_server");
 	//wait_for_ip();
 
-	if(	xTaskCreate(tcp_client_task, "tcp_client",10240 , NULL, 5, NULL)==pdPASS)//8192
+	if(	xTaskCreate(tcp_client_task, "tcp_client",20480 , NULL, 5, NULL)==pdPASS)//8192
   		ESP_LOGI(TAG, "tcp_client create created....");
 	else
 		ESP_LOGI(TAG, "tcp_client create faile....");
@@ -796,8 +832,10 @@ static void lv_tick_task(void) {
   lv_tick_inc(portTICK_RATE_MS);
 }
 
+
 void app_main()
 {
+	
 	EventBits_t uxBits;
 	esp_err_t err = nvs_flash_init();
 		if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
@@ -806,20 +844,42 @@ void app_main()
 			ESP_ERROR_CHECK(nvs_flash_erase());
 			err = nvs_flash_init();
 		}
-
+		
+	//ESP_ERROR_CHECK(nvs_flash_erase());
     //ESP_ERROR_CHECK( nvs_flash_init() );
     //initialise_wifi();
     ESP_ERROR_CHECK( err );
 	ESP_LOGI(TAG, "[APP] IDF version: %s", esp_get_idf_version());
 	
+	ESP_LOGI("== ==1", "memory: %d bytes", esp_get_free_heap_size());
 	
     initialise_wifi();
+
+	ESP_LOGI("== ==2", "memory: %d bytes", esp_get_free_heap_size());
+	
 	if(xTaskCreatePinnedToCore(taskScanKey, "KEYSCAN", 2048, NULL, 8, NULL, tskNO_AFFINITY)== pdPASS)
   		//if(xTaskCreatePinnedToCore(taskScanKey,"KEYSCAN",2000,NULL,(portPRIVILEGE_BIT | 3),&keyHandle,1) == pdPASS)
     	ESP_LOGI(TAG, "KeyScan task created.");
   	else ESP_LOGE(TAG, "Failed to create KeyScan task.");
-	//i2s_init();//音频
-   /*if(wifi_flag_nvs != 2)
+
+	ESP_LOGI("== ==3", "memory: %d bytes", esp_get_free_heap_size());
+	i2s_init();//音频
+
+	ESP_LOGI("== ==4", "memory: %d bytes", esp_get_free_heap_size());
+	//Deinit TWDT after all tasks have unsubscribed
+	/*if(esp_task_wdt_deinit()== ESP_OK)
+  		ESP_LOGI(TAG, "esp_task_wdt_deinit SUCCESS1.");
+  	else ESP_LOGE(TAG, "esp_task_wdt_deinit NO1.");
+	
+	if(esp_task_wdt_status(NULL)== ESP_ERR_INVALID_STATE)
+  		ESP_LOGI(TAG, "esp_task_wdt_deinit SUCCESS2.");
+  	else ESP_LOGE(TAG, "esp_task_wdt_deinit NO2.")*/;
+	//	CHECK_ERROR_CODE(, ESP_OK);
+	//;	CHECK_ERROR_CODE(, ESP_ERR_INVALID_STATE); 	//Confirm TWDT has been deinitialized
+	
+   /*
+///////////////////////
+   if(wifi_flag_nvs != 2)
 	{
 		uxBits = xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT | ESPTOUCH_DONE_BIT, true, false, portMAX_DELAY); 
 		if(uxBits & CONNECTED_BIT) {
@@ -828,13 +888,13 @@ void app_main()
    	}
 
    
-*/
+
 	while(wifi_flag_nvs != 3)
 	{
 		ESP_LOGI(TAG, "======.");
 		vTaskDelay(1000 / portTICK_RATE_MS);
-	}
-	///////////////////
+	}*/
+	//////////////////
 	
 	lv_init();
 	Lcd_Init();
@@ -851,21 +911,9 @@ void app_main()
 	////////////////////
 	//demo_create();
 	//testfill();
-	 xTaskCreate(taskUI_Char, "UI_task", 2048, NULL, 5, NULL);
-			if (TcprecvdataQueueCreate() == ESP_OK)
-				ESP_LOGI(TAG, "TcpdataQueueCreate  created.");
-			else ESP_LOGE(TAG, "Failed to TcpdataQueueCreate.");
-			if (TcpsenddataQueueCreate() == ESP_OK)
-				ESP_LOGI(TAG, "TcpsenddataQueueCreate  created.");
-			else ESP_LOGE(TAG, "Failed to TcpsenddataQueueCreate.");
-			
-			if(	xTaskCreate(dataHandle_task, "tcp_client", 15360, NULL, 4, NULL)==pdPASS)
-		  		ESP_LOGI(TAG, "dataHandle_task create created....");
-			else
-				ESP_LOGI(TAG, "dataHandle_task create faile....");
-			
-			vTaskDelay(50 / portTICK_RATE_MS);
-			xTaskCreate(ledpwm, "ledpwmtask", 2048, NULL, 6, NULL);
+	xTaskCreate(taskUI_Char, "UI_task", 2048, NULL, 7, NULL);
+	xTaskCreate(ledpwm, "ledpwmtask", 2048, NULL, 6, NULL);
+	
 	/*
 	xTaskCreate(taskUI_Char, "UI_task", 2048, NULL, 5, NULL);
 	if (TcprecvdataQueueCreate() == ESP_OK)

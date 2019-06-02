@@ -23,6 +23,7 @@
 #include "myui.h"
 #include "qr_encode.h"
 #include "LcdTFT22_Driver.h"
+#include "i2s_dac_demo.h"
 
 bool wifi_connected = false ;
 bool server_connected = false ;
@@ -43,7 +44,7 @@ static lv_style_t style_bar1,status_bar_style, startup_bar_style,startup_bar_ind
 
 lv_obj_t *screenmain,*lougou,*lougoutext,*text1,*text2 ,*text3,*text4,*text5,*wifi_icon,* text6,* text7,* text8,*img_coverlogo;
 lv_obj_t *status_bar,*Table_text,*dirtext,*remarks, *startup_bar;
-lv_style_t temp_style ,temp_style1 ,style_bar1,status_bar_style, startup_bar_style,startup_bar_indic_style,bottom_style,wifi_icon_stayle;
+lv_style_t temp_style ,temp_style1 ,temp_style2,style_bar1,status_bar_style, startup_bar_style,startup_bar_indic_style,bottom_style,wifi_icon_stayle;
 
 
 lv_group_t *group;
@@ -210,7 +211,7 @@ void sys_variableinit(void)
     for(i=0;i<sizeof(majiang.Table_number);i++)
         majiang.Table_number[i] = 0;
 
-      sprintf((char*)majiang.Table_number ,"桌号007");
+      sprintf((char*)majiang.Table_number ,"Z0007");
 //    majiang.Table_number[0] = '0';
 //    majiang.Table_number[1] = '0';
 //    majiang.Table_number[2] = '3';
@@ -238,7 +239,7 @@ void sys_variableinit(void)
     majiang.current_game = 0 ;
     majiang.current_page = 0;
     majiang.confirm_num  = 0 ;
-    
+    majiang.current_audio = AUDIO_NULL ;
 
 }
 
@@ -368,6 +369,8 @@ void drawimglogo(void) {
 void drawlogo (void)
 {
 
+	clear_screenmain();
+	
     startup_bar  = lv_bar_create(screenmain, NULL);
     lv_obj_set_size(startup_bar, lv_obj_get_width(screenmain)-20, 10);
     //lv_obj_align(startup_bar, NULL, LV_ALIGN_IN_TOP_RIGHT, -20, 30);
@@ -401,7 +404,7 @@ void drawlogo (void)
 
 void drawBottom (void)
 {
-    style_init();
+    
 
     status_bar = lv_obj_create(lv_scr_act(), NULL);
     lv_obj_set_size(status_bar, LV_HOR_RES, STATUS_BAR_VER);//状态栏大小
@@ -438,7 +441,7 @@ void drawBottom (void)
     lv_obj_align(remarks, NULL, LV_ALIGN_IN_TOP_RIGHT, -50, 0);//左对齐
     lv_label_set_style(remarks, &status_bar_style);
     //lv_label_set_long_mode(remarks, LV_LABEL_LONG_DOT);
-    lv_label_set_text(remarks,"你好");
+    lv_label_set_text(remarks," ");
     //lv_label_set_align(dirtext, LV_LABEL_ALIGN_CENTER);
 
 
@@ -976,7 +979,8 @@ void drawwaiting (void)
     lv_label_set_long_mode(txt1[0],LV_LABEL_LONG_BREAK);
 	lv_label_set_style(txt1[0], &temp_style);
 
-	sprintf(str11,"  东\n\n  %s",majiang.current_game_score[0]);
+	sprintf(str11,"  东\n   %c\n  %s",majiang.current_game_score[0][0],&majiang.current_game_score[0][1]);
+	//sprintf(str11,"  东\n\n  %s",majiang.current_game_score[0]);
 	lv_label_set_text(txt1[0],str11);
 
 	txtobj[1] = lv_obj_create(screenmain, NULL);
@@ -988,8 +992,9 @@ void drawwaiting (void)
     lv_label_set_long_mode(txt1[1],LV_LABEL_LONG_BREAK);
 	lv_label_set_style(txt1[1], &temp_style);
 
-	sprintf(str11,"  南\n\n  %s",majiang.current_game_score[1]);
-
+	//sprintf(str11,"  南\n\n  %s",majiang.current_game_score[1]);
+	sprintf(str11,"  南\n   %c\n  %s",majiang.current_game_score[1][0],&majiang.current_game_score[1][1]);
+	
 	lv_label_set_text(txt1[1],str11);
 
     txtobj[2] = lv_obj_create(screenmain, NULL);
@@ -1001,8 +1006,9 @@ void drawwaiting (void)
     lv_label_set_long_mode(txt1[2],LV_LABEL_LONG_BREAK);
 	lv_label_set_style(txt1[2], &temp_style);
 	
-	sprintf(str11,"  西\n\n  %s",majiang.current_game_score[2]);
-
+	//sprintf(str11,"  西\n\n  %s",majiang.current_game_score[2]);
+	sprintf(str11,"  西\n   %c\n  %s",majiang.current_game_score[2][0],&majiang.current_game_score[2][1]);
+	
 	lv_label_set_text(txt1[2],str11);
 
 	txtobj[3] = lv_obj_create(screenmain, NULL);
@@ -1014,7 +1020,9 @@ void drawwaiting (void)
     lv_label_set_long_mode(txt1[3],LV_LABEL_LONG_BREAK);
 	lv_label_set_style(txt1[3], &temp_style);
 	
-	sprintf(str11,"  北\n\n  %s",majiang.current_game_score[3]);
+	//sprintf(str11,"  北\n\n  %s",majiang.current_game_score[3]);
+	sprintf(str11,"  北\n   %c\n  %s",majiang.current_game_score[3][0],&majiang.current_game_score[3][1]);
+	
 	lv_label_set_text(txt1[3],str11);
 
     lv_style_copy(&temp_style1,&status_bar_style);
@@ -1022,52 +1030,187 @@ void drawwaiting (void)
 	temp_style1.body.grad_color = LV_COLOR_GREEN;
 	temp_style1.body.border.color = LV_COLOR_WHITE ;
 	temp_style1.body.border.width = 2 ;
+	
+	lv_style_copy(&temp_style2,&status_bar_style);
+	temp_style2.body.main_color =LV_COLOR_RED ;
+	temp_style2.body.grad_color = LV_COLOR_RED;
+	temp_style2.body.border.color = LV_COLOR_WHITE ;
+	temp_style2.body.border.width = 2 ;
 
 
+	if(majiang.current_keyV[0] == KEYV_Y)
+	{
+		text1 = lv_obj_create(screenmain, NULL);
+		lv_obj_set_style(text1, &temp_style1);
+		lv_obj_set_size(text1, screenwidth/4, screenheight/4);
+		lv_obj_align(text1, NULL, LV_ALIGN_IN_BOTTOM_LEFT,0, 0);
 
-    text1 = lv_obj_create(screenmain, NULL);
-	lv_obj_set_style(text1, &temp_style1);
-	lv_obj_set_size(text1, screenwidth/4, screenheight/4);
-    lv_obj_align(text1, NULL, LV_ALIGN_IN_BOTTOM_LEFT,0, 0);
+		text2 = lv_label_create(text1, NULL);
+		lv_label_set_long_mode(text2,LV_LABEL_LONG_BREAK);
+		lv_label_set_style(text2, &temp_style1);
+		lv_obj_align(text2, NULL, LV_ALIGN_CENTER,0, 0);
+		lv_label_set_text(text2,"已确");
+	}
+	else if(majiang.current_keyV[0] == KEYV_N)
+	{
+		text1 = lv_obj_create(screenmain, NULL);
+		lv_obj_set_style(text1, &temp_style2);
+		lv_obj_set_size(text1, screenwidth/4, screenheight/4);
+		lv_obj_align(text1, NULL, LV_ALIGN_IN_BOTTOM_LEFT,0, 0);
 
-    text2 = lv_label_create(text1, NULL);
-    lv_label_set_long_mode(text2,LV_LABEL_LONG_BREAK);
-	lv_label_set_style(text2, &temp_style1);
-	lv_obj_align(text2, NULL, LV_ALIGN_CENTER,0, 0);
-	lv_label_set_text(text2,"已确");
+		text2 = lv_label_create(text1, NULL);
+		lv_label_set_long_mode(text2,LV_LABEL_LONG_BREAK);
+		lv_label_set_style(text2, &temp_style2);
+		lv_obj_align(text2, NULL, LV_ALIGN_CENTER,0, 0);
+		lv_label_set_text(text2,"异议");
+		
+	}
+	else if(majiang.current_keyV[0] == KEYV_U)
+	{
+		text1 = lv_obj_create(screenmain, NULL);
+		lv_obj_set_style(text1, &status_bar_style);
+		lv_obj_set_size(text1, screenwidth/4, screenheight/4);
+		lv_obj_align(text1, NULL, LV_ALIGN_IN_BOTTOM_LEFT,0, 0);
 
-	text3 = lv_obj_create(screenmain, NULL);
-	lv_obj_set_style(text3, &status_bar_style);
-	lv_obj_set_size(text3, screenwidth/4, screenheight/4);
-    lv_obj_align(text3, NULL, LV_ALIGN_IN_BOTTOM_LEFT,(screenwidth/4)*1, 0);
+		text2 = lv_label_create(text1, NULL);
+		lv_label_set_long_mode(text2,LV_LABEL_LONG_BREAK);
+		lv_label_set_style(text2, &status_bar_style);
+		lv_obj_align(text2, NULL, LV_ALIGN_CENTER,0, 0);
+		lv_label_set_text(text2,"待确");
+		
+	}
+	
+	if(majiang.current_keyV[1] == KEYV_Y)
+	{
+		text3 = lv_obj_create(screenmain, NULL);
+		lv_obj_set_style(text3, &temp_style1);
+		lv_obj_set_size(text3, screenwidth/4, screenheight/4);
+		lv_obj_align(text3, NULL, LV_ALIGN_IN_BOTTOM_LEFT,(screenwidth/4)*1, 0);
 
-    text4 = lv_label_create(text3, NULL);
-    lv_label_set_long_mode(text4,LV_LABEL_LONG_BREAK);
-	lv_label_set_style(text4, &status_bar_style);
-	lv_obj_align(text4, NULL, LV_ALIGN_CENTER,0, 0);
-	lv_label_set_text(text4,"待确");
+		text4 = lv_label_create(text3, NULL);
+		lv_label_set_long_mode(text4,LV_LABEL_LONG_BREAK);
+		lv_label_set_style(text4, &temp_style1);
+		lv_obj_align(text4, NULL, LV_ALIGN_CENTER,0, 0);
+		lv_label_set_text(text4,"已确");
+	}
+	else if(majiang.current_keyV[1] == KEYV_N)
+	{
+		text3 = lv_obj_create(screenmain, NULL);
+		lv_obj_set_style(text3, &temp_style2);
+		lv_obj_set_size(text3, screenwidth/4, screenheight/4);
+		lv_obj_align(text3, NULL, LV_ALIGN_IN_BOTTOM_LEFT,(screenwidth/4)*1, 0);
 
-	text5 = lv_obj_create(screenmain, NULL);
-	lv_obj_set_style(text5, &temp_style1);
-	lv_obj_set_size(text5, screenwidth/4, screenheight/4);
-    lv_obj_align(text5, NULL, LV_ALIGN_IN_BOTTOM_LEFT,(screenwidth/4)*2, 0);
+		text4 = lv_label_create(text3, NULL);
+		lv_label_set_long_mode(text4,LV_LABEL_LONG_BREAK);
+		lv_label_set_style(text4, &temp_style2);
+		lv_obj_align(text4, NULL, LV_ALIGN_CENTER,0, 0);
+		lv_label_set_text(text4,"异议");
+		
+	}
+	else if(majiang.current_keyV[1] == KEYV_U)
+	{
+		
+		text3 = lv_obj_create(screenmain, NULL);
+		lv_obj_set_style(text3, &status_bar_style);
+		lv_obj_set_size(text3, screenwidth/4, screenheight/4);
+		lv_obj_align(text3, NULL, LV_ALIGN_IN_BOTTOM_LEFT,(screenwidth/4)*1, 0);
 
-    text6 = lv_label_create(text5, NULL);
-    lv_label_set_long_mode(text6,LV_LABEL_LONG_BREAK);
-	lv_label_set_style(text6, &temp_style1);
-	lv_obj_align(text6, NULL, LV_ALIGN_CENTER,0, 0);
-	lv_label_set_text(text6,"ye确");
+		text4 = lv_label_create(text3, NULL);
+		lv_label_set_long_mode(text4,LV_LABEL_LONG_BREAK);
+		lv_label_set_style(text4, &status_bar_style);
+		lv_obj_align(text4, NULL, LV_ALIGN_CENTER,0, 0);
+		lv_label_set_text(text4,"待确");
+	}
+	
+	if(majiang.current_keyV[2] == KEYV_Y)
+	{
+		text5 = lv_obj_create(screenmain, NULL);
+		lv_obj_set_style(text5, &temp_style1);
+		lv_obj_set_size(text5, screenwidth/4, screenheight/4);
+		lv_obj_align(text5, NULL, LV_ALIGN_IN_BOTTOM_LEFT,(screenwidth/4)*2, 0);
 
-	text7 = lv_obj_create(screenmain, NULL);
-	lv_obj_set_style(text7, &temp_style1);
-	lv_obj_set_size(text7, screenwidth/4, screenheight/4);
-    lv_obj_align(text7, NULL, LV_ALIGN_IN_BOTTOM_LEFT,(screenwidth/4)*3, 0);
+		text6 = lv_label_create(text5, NULL);
+		lv_label_set_long_mode(text6,LV_LABEL_LONG_BREAK);
+		lv_label_set_style(text6, &temp_style1);
+		lv_obj_align(text6, NULL, LV_ALIGN_CENTER,0, 0);
+		lv_label_set_text(text6,"已确");
+	}
+	else if(majiang.current_keyV[2] == KEYV_N)
+	{
+		text5 = lv_obj_create(screenmain, NULL);
+		lv_obj_set_style(text5, &temp_style2);
+		lv_obj_set_size(text5, screenwidth/4, screenheight/4);
+		lv_obj_align(text5, NULL, LV_ALIGN_IN_BOTTOM_LEFT,(screenwidth/4)*2, 0);
 
-    text8 = lv_label_create(text7, NULL);
-    lv_label_set_long_mode(text8,LV_LABEL_LONG_BREAK);
-	lv_label_set_style(text8, &temp_style1);
-	lv_obj_align(text8, NULL, LV_ALIGN_CENTER,0, 0);
-	lv_label_set_text(text8,"待确");
+		text6 = lv_label_create(text5, NULL);
+		lv_label_set_long_mode(text6,LV_LABEL_LONG_BREAK);
+		lv_label_set_style(text6, &temp_style2);
+		lv_obj_align(text6, NULL, LV_ALIGN_CENTER,0, 0);
+		lv_label_set_text(text6,"异议");
+		
+	}
+	else if(majiang.current_keyV[2] == KEYV_U)
+	{
+		
+		text5 = lv_obj_create(screenmain, NULL);
+		lv_obj_set_style(text5, &status_bar_style);
+		lv_obj_set_size(text5, screenwidth/4, screenheight/4);
+		lv_obj_align(text5, NULL, LV_ALIGN_IN_BOTTOM_LEFT,(screenwidth/4)*2, 0);
+
+		text6 = lv_label_create(text5, NULL);
+		lv_label_set_long_mode(text6,LV_LABEL_LONG_BREAK);
+		lv_label_set_style(text6, &status_bar_style);
+		lv_obj_align(text6, NULL, LV_ALIGN_CENTER,0, 0);
+		lv_label_set_text(text6,"待确");
+	}
+	
+
+	if(majiang.current_keyV[3] == KEYV_Y)
+	{
+		text7 = lv_obj_create(screenmain, NULL);
+		lv_obj_set_style(text7, &temp_style1);
+		lv_obj_set_size(text7, screenwidth/4, screenheight/4);
+		lv_obj_align(text7, NULL, LV_ALIGN_IN_BOTTOM_LEFT,(screenwidth/4)*3, 0);
+
+		text8 = lv_label_create(text7, NULL);
+		lv_label_set_long_mode(text8,LV_LABEL_LONG_BREAK);
+		lv_label_set_style(text8, &temp_style1);
+		lv_obj_align(text8, NULL, LV_ALIGN_CENTER,0, 0);
+		lv_label_set_text(text8,"已确");
+	}
+	else if(majiang.current_keyV[3] == KEYV_N)
+	{
+		text7 = lv_obj_create(screenmain, NULL);
+		lv_obj_set_style(text7, &temp_style2);
+		lv_obj_set_size(text7, screenwidth/4, screenheight/4);
+		lv_obj_align(text7, NULL, LV_ALIGN_IN_BOTTOM_LEFT,(screenwidth/4)*3, 0);
+
+		text8 = lv_label_create(text7, NULL);
+		lv_label_set_long_mode(text8,LV_LABEL_LONG_BREAK);
+		lv_label_set_style(text8, &temp_style2);
+		lv_obj_align(text8, NULL, LV_ALIGN_CENTER,0, 0);
+		lv_label_set_text(text8,"待确");
+		
+	}
+	else if(majiang.current_keyV[3] == KEYV_U)
+	{
+		
+		text7 = lv_obj_create(screenmain, NULL);
+		lv_obj_set_style(text7, &status_bar_style);
+		lv_obj_set_size(text7, screenwidth/4, screenheight/4);
+		lv_obj_align(text7, NULL, LV_ALIGN_IN_BOTTOM_LEFT,(screenwidth/4)*3, 0);
+
+		text8 = lv_label_create(text7, NULL);
+		lv_label_set_long_mode(text8,LV_LABEL_LONG_BREAK);
+		lv_label_set_style(text8, &status_bar_style);
+		lv_obj_align(text8, NULL, LV_ALIGN_CENTER,0, 0);
+		lv_label_set_text(text8,"待确");
+	}
+	
+
+	
+
+	
 
 	majiang.current_page = PAGE_CWAITING ;
   //
@@ -1188,6 +1331,124 @@ void drawmodify1 (void)
 
 }
 
+
+
+void drawwificonTips (void)
+{
+
+	char num = 0 ;
+	char strtemp[40];
+
+    clear_screenmain();
+	majiang.current_page = PAGE_TIPs ;
+	num = 0 ;
+    while(!wifi_connected)
+    {
+    	if(num==1)
+		{
+	        if(majiang.wifi_datasave)
+	        {
+	            text1 = lv_label_create(screenmain, NULL);
+
+	            lv_label_set_style(text1, &status_bar_style);
+	            //lv_obj_set_pos(text1, LV_HOR_RES-30, 5);
+	            lv_obj_align(text1, NULL, LV_ALIGN_IN_TOP_LEFT, 10, 0);//左对齐
+				sprintf(strtemp,"连接WIFI:%s" ,majiang.wifissid);
+				lv_label_set_text(text1,strtemp);
+	        }
+	        else
+	        {
+	            text2 = lv_label_create(screenmain, NULL);
+	            lv_label_set_style(text2, &status_bar_style);
+	            //lv_obj_set_pos(text2, LV_HOR_RES-30, 5);
+	            lv_obj_align(text2, NULL, LV_ALIGN_IN_TOP_LEFT, 10, 0);//左对齐
+	            lv_label_set_text(text2,"请用手机配置wifi");
+				num = 6 ;
+			}
+		}
+		else
+		{
+			if(num == 5)
+			{
+				text3 = lv_label_create(screenmain, NULL);
+
+		        lv_label_set_style(text3, &status_bar_style);
+		        lv_obj_align(text3, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 30);//左对齐
+				//sprintf(strtemp,"" ,majiang.wifissid);
+				lv_label_set_text(text3,"连接失败,请检查路由器");
+				text4 = lv_label_create(screenmain, NULL);
+
+		        lv_label_set_style(text4, &status_bar_style);
+		        lv_obj_align(text4, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 60);//左对齐
+				//sprintf(strtemp,"" ,majiang.wifissid);
+				lv_label_set_text(text4,"或者重新配置WiFi");
+			}
+		}
+		num++;
+		lv_label_set_text(wifi_icon, wifi_connected ?  (server_connected ? SYMBOL_WIFI""SYMBOL_OK : SYMBOL_WIFI""SYMBOL_WARNING) : SYMBOL_WARNING""SYMBOL_WARNING);
+	
+		vTaskDelay(2000 / portTICK_RATE_MS);
+
+    }
+
+    clear_screenmain();
+	lv_label_set_text(wifi_icon, wifi_connected ?  (server_connected ? SYMBOL_WIFI""SYMBOL_OK : SYMBOL_WIFI""SYMBOL_WARNING) : SYMBOL_WARNING""SYMBOL_WARNING);
+		
+	text1 = lv_label_create(screenmain, NULL);
+
+    lv_label_set_style(text1, &status_bar_style);
+    lv_obj_align(text1, NULL, LV_ALIGN_IN_TOP_LEFT, 10, 0);//左对齐
+
+	sprintf(strtemp,"连接成功:%s" ,majiang.wifissid);
+	
+	lv_label_set_text(text1,strtemp);
+	
+	/*
+	num = 0 ;
+    while(!server_connected)
+    {
+    		num++;
+			if(num == 1)
+			{
+		        text2 = lv_label_create(screenmain, NULL);
+
+		        lv_label_set_style(text2, &status_bar_style);
+		        lv_obj_align(text2, NULL, LV_ALIGN_IN_TOP_LEFT, 10, 30);//左对齐
+		        lv_label_set_text(text2,"等待连接服务器");
+			}
+			else if(num==5)
+			{
+				text3 = lv_label_create(screenmain, NULL);
+
+		        lv_label_set_style(text3, &status_bar_style);
+		        lv_obj_align(text3, NULL, LV_ALIGN_IN_TOP_LEFT, 10, 60);//左对齐
+		        lv_label_set_text(text3,"请检查WIFI网络连接");
+
+				text4 = lv_label_create(screenmain, NULL);
+
+		        lv_label_set_style(text4, &status_bar_style);
+		        lv_obj_align(text4, NULL, LV_ALIGN_IN_TOP_LEFT, 10, 90);//左对齐
+		        lv_label_set_text(text4,"请检查服务器");
+			
+			}
+
+		if(!wifi_connected)
+		{
+			lv_label_set_text(text1,"WIFI 断开");
+			lv_label_set_text(wifi_icon, wifi_connected ?  (server_connected ? SYMBOL_WIFI""SYMBOL_OK : SYMBOL_WIFI""SYMBOL_WARNING) : SYMBOL_WARNING""SYMBOL_WARNING);
+		}
+		vTaskDelay(2000 / portTICK_RATE_MS);
+    }
+	lv_label_set_text(wifi_icon, wifi_connected ?  (server_connected ? SYMBOL_WIFI""SYMBOL_OK : SYMBOL_WIFI""SYMBOL_WARNING) : SYMBOL_WARNING""SYMBOL_WARNING);
+		
+    lv_label_set_text(text2,"连接服务器成功");
+	lv_label_set_text(text3," ");
+	*/
+    majiang.current_page = PAGE_TIPs ;
+}
+
+
+
 void wifi_set_stat(bool c) {
 	wifi_connected = c;
 	majiang.wifi_connect_state =c ;
@@ -1204,11 +1465,15 @@ void taskUI_Char(void *parameter) {
 	//ESP_LOGE(TAG, "enter taskui");
 	//char arrtext[6][MAXCHARNUM]={"胡：自摸 -2","杠：点炮 -22","碰： +8 东","胡： +2 西","好： +2 东","不阿： +2 东"};
 
-	 drawBottom ();
+	//vTaskDelay(2000 / portTICK_RATE_MS);
+	style_init();
+	drawBottom ();
 
+	drawwificonTips ();
+	
 	drawlogo ();
-	 
-	vTaskDelay(2000 / portTICK_RATE_MS);
+	vTaskDelay(3000 / portTICK_RATE_MS);
+	//drawwaiting ();
 	while(1) {//TEST
 	
 		printf("uitask is run\r\n");
@@ -1240,6 +1505,8 @@ void taskUI_Char(void *parameter) {
 		drawmodify();
 		printf("page %d\r\n",majiang.current_page);
 		*/
+		ESP_LOGI("== ==", "[APP] Free memory: %d bytes", esp_get_free_heap_size());
+		
 		vTaskDelay(2000 / portTICK_RATE_MS);
 		lv_label_set_text(wifi_icon, wifi_connected ?  (server_connected ? SYMBOL_WIFI""SYMBOL_OK : SYMBOL_WIFI""SYMBOL_WARNING) : SYMBOL_WARNING""SYMBOL_WARNING);
 		/*

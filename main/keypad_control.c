@@ -61,10 +61,10 @@ esp_err_t nvs_erase_wifi_data(void)
     if (err != ESP_OK) return err;
 
     
-    err = nvs_erase_key(my_handle, "wssid");
+    err = nvs_erase_key(my_handle, "w12id");
     if (err != ESP_OK) return err;
 	
-	err = nvs_erase_key(my_handle, "wpass");
+	err = nvs_erase_key(my_handle, "f34ss");
     if (err != ESP_OK) return err;
 
     // Close
