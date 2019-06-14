@@ -3,6 +3,10 @@
 
 esp_err_t i2s_init();
 void play_audio_demo(char audio_num) ;
+void setmyVolume(char vol) ;
+char getmyVolumePercentage();
+
+
 #define AUDIO_NULL      0
 #define AUDIO_1         1
 #define AUDIO_2         2

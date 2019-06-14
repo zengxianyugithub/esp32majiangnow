@@ -2,7 +2,7 @@
 #define _MYUI_H_
 #include "lvgl/lvgl.h"
 
-#define STATUS_BAR_VER  30
+#define STATUS_BAR_VER  50
 
 #define PAGE_LOUGOU    1
 #define PAGE_STARTUP   2
@@ -15,6 +15,7 @@
 #define PAGE_RANKING   9
 #define PAGE_CWAITING  10
 #define PAGE_TIPs      11
+#define PAGE_POINT12   12
 
 #define KEYV_Y          1
 #define KEYV_N          2
@@ -57,7 +58,11 @@ typedef struct {
     unsigned int confirm_num :4 ;//已确认分数个数  1111 全部确认 0000 都没确认
     char current_game_score[4][4];//当前盘数的分数
 	char current_keyV[4];//当前各个方位的按键状态  1 确认  2 有异议 3 不确定还没有按键  
+	char point1;//拿牌顺序1
+	char point2;//拿牌顺序2
 	char current_audio;
+	char volume;//音频音量大小 0-100
+	double volumeMultiplier;//声音系数
 
 }struct_majiang;
 
@@ -85,6 +90,7 @@ void drawscore (char t1[][MAXCHARNUM]);
 void drawwaiting (void);
 void drawmodify1 (void);
 void drawmodify(void);
+void drawpoint1_point2 (unsigned char point1, unsigned char point2);
 
 void clear_screenmain();
 void clear_status_bar();

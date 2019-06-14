@@ -11,6 +11,8 @@ esp_err_t TcpsenddataQueueCreate() ;
 void dataHandle_task(void *parameter);
 void cjson_to_struct_info(char *text);
 void tcpdataretrun(char *str);
+void tcpdataretrunA012();
+void tcpdataretrunA011_keyv(char *str);
 
 
 #endif

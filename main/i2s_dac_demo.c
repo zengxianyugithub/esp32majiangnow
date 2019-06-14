@@ -13,7 +13,9 @@
 
 #include "i2s_dac_demo.h"
 #include "myui.h"
+#include <math.h>
 
+#define MIN_VOL_OFFSET -50
 
 static const char* TAG = "ad/da";
 #define V_REF   1100
@@ -213,6 +215,20 @@ void example_i2s_adc_data_scale(uint8_t * d_buff, uint8_t* s_buff, uint32_t len)
  *        4. Play an example audio file(file format: 8bit/8khz/single channel)
  *        5. Loop back to step 3
  */
+ 
+ 
+
+void setmyVolume(char vol) {
+  if(vol > 100 ) majiang.volume = 100;
+  else if(vol < 0) majiang.volume = 0;
+  else majiang.volume = vol;
+  majiang.volumeMultiplier = pow(10, (MIN_VOL_OFFSET + vol / 2) / 20.0);
+}
+char getmyVolumePercentage() {
+  return majiang.volume;
+}
+
+
 void example_i2s_adc_dac(void*arg)
 {
     /*const esp_partition_t *data_partition = NULL;
@@ -280,8 +296,9 @@ void example_i2s_adc_dac(void*arg)
 				int play_len = 0;
 				int i2s_wr_len = 0 ;
 				int tot_size = sizeof(audio_table1);
-				majiang.current_audio = AUDIO_1 ;
-		
+				majiang.current_audio = AUDIO_2 ;//启动音频
+		//double volumeMultiplier = pow(10, (-50 + 40 / 2) / 20.0);
+	
 	while (1) 
 	{
 		if(majiang.current_audio == AUDIO_3)
@@ -296,6 +313,8 @@ void example_i2s_adc_dac(void*arg)
 			while (offset < tot_size) {
 				play_len = ((tot_size - offset) > (4 * 1024)) ? (4 * 1024) : (tot_size - offset);
 				i2s_wr_len = example_i2s_dac_data_scale(i2s_write_buff, (uint8_t*)(audio_table3 + offset), play_len);
+				for(int i = 0; i < i2s_wr_len; ++i)
+					i2s_write_buff[i] *= majiang.volumeMultiplier;
 				i2s_write(EXAMPLE_I2S_NUM, i2s_write_buff, i2s_wr_len, &bytes_written, portMAX_DELAY);
 				offset += play_len;
 				example_disp_buf((uint8_t*) i2s_write_buff, 32);
@@ -314,6 +333,8 @@ void example_i2s_adc_dac(void*arg)
 			while (offset < tot_size) {
 				play_len = ((tot_size - offset) > (4 * 1024)) ? (4 * 1024) : (tot_size - offset);
 				i2s_wr_len = example_i2s_dac_data_scale(i2s_write_buff, (uint8_t*)(audio_table2 + offset), play_len);
+				for(int i = 0; i < i2s_wr_len; ++i)
+					i2s_write_buff[i] *= majiang.volumeMultiplier;
 				i2s_write(EXAMPLE_I2S_NUM, i2s_write_buff, i2s_wr_len, &bytes_written, portMAX_DELAY);
 				offset += play_len;
 				example_disp_buf((uint8_t*) i2s_write_buff, 32);
@@ -332,6 +353,8 @@ void example_i2s_adc_dac(void*arg)
 			while (offset < tot_size) {
 				play_len = ((tot_size - offset) > (4 * 1024)) ? (4 * 1024) : (tot_size - offset);
 				i2s_wr_len = example_i2s_dac_data_scale(i2s_write_buff, (uint8_t*)(audio_table1 + offset), play_len);
+				for(int i = 0; i < i2s_wr_len; ++i)
+					i2s_write_buff[i] *= majiang.volumeMultiplier;
 				i2s_write(EXAMPLE_I2S_NUM, i2s_write_buff, i2s_wr_len, &bytes_written, portMAX_DELAY);
 				offset += play_len;
 				example_disp_buf((uint8_t*) i2s_write_buff, 32);
@@ -439,6 +462,7 @@ void play_audio_demo(char audio_num)
 esp_err_t i2s_init()
 {
     example_i2s_init();
+	setmyVolume(60) ;
 	//example_set_file_play_mode();
 	//play_audio_demo(AUDIO_1);
     //esp_log_level_set("I2S", ESP_LOG_INFO);

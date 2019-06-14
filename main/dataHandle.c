@@ -23,7 +23,9 @@
 
 #include "myui.h"
 #include "qr_encode.h"
-#include "LcdTFT22_Driver.h"
+//#include "LcdTFT22_Driver.h"
+#include "lcdTFT32.h"
+
 #include "dataHandle.h"
 #include "cJSON.h"
 #include "i2s_dac_demo.h"
@@ -45,6 +47,59 @@ esp_err_t TcpsenddataQueueCreate() {
 	if(Queue_Tcpsenddata == 0) return ESP_FAIL;
 
 	return ESP_OK;
+}
+
+
+void tcpdataretrunA011_keyv(char *str)
+{
+	cJSON *root;
+	char dir[3];
+	dir[0]='A'+majiang.position-1;
+	dir[1]=0;dir[2]=0;
+    root = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, "clientId", cJSON_CreateString(majiang.Table_number));
+    cJSON_AddItemToObject(root, "actionCode", cJSON_CreateString("A011"));
+	cJSON_AddItemToObject(root, "pos", cJSON_CreateString(dir));
+	dir[0]='0'+majiang.point1;
+	dir[1]='0'+majiang.point2;
+	dir[2]=0;
+	cJSON_AddItemToObject(root, "keyv", cJSON_CreateString(str));
+    
+	char *buf = cJSON_PrintUnformatted(root);
+
+ 	//printf("return  json data\r\n");
+	xQueueSend(Queue_Tcpsenddata, (void*)buf, (TickType_t) 10);
+
+	free(buf); //释放内存
+	
+    cJSON_Delete(root);
+	
+}
+
+void tcpdataretrunA012()
+{
+	cJSON *root;
+	char dir[3];
+	dir[0]='A'+majiang.position-1;
+	dir[1]=0;dir[2]=0;
+    root = cJSON_CreateObject();
+    cJSON_AddItemToObject(root, "clientId", cJSON_CreateString(majiang.Table_number));
+    cJSON_AddItemToObject(root, "actionCode", cJSON_CreateString("A012"));
+	cJSON_AddItemToObject(root, "pos", cJSON_CreateString(dir));
+	dir[0]='0'+majiang.point1;
+	dir[1]='0'+majiang.point2;
+	dir[2]=0;
+	cJSON_AddItemToObject(root, "point", cJSON_CreateString(dir));
+    
+	char *buf = cJSON_PrintUnformatted(root);
+
+ 	//printf("return  json data\r\n");
+	xQueueSend(Queue_Tcpsenddata, (void*)buf, (TickType_t) 10);
+
+	free(buf); //释放内存
+	
+    cJSON_Delete(root);
+	
 }
 
 void tcpdataretrun(char *str)
@@ -1153,7 +1208,22 @@ void cjson_to_struct_info(char *text)
 						printf("audio = %d \n", majiang.current_audio);
 					}
 				}
-			
+				
+				else if(strcmp(psub->valuestring, "A012") == 0) //拿牌点数
+				{
+					if(strstr(pjsonprint, "\"point\"") > 0)
+					{
+						tempobj = cJSON_GetObjectItem(root, "point");
+						tempstr = tempobj->valuestring;
+						majiang.point1 = tempstr[0]-'0';
+						majiang.point2 = tempstr[1]-'0';
+						printf("point = %d \n", majiang.point1*10+majiang.point2);
+						drawpoint1_point2 (majiang.point1, majiang.point2);
+					}
+				}
+				
+				
+				tcpdataretrun(psub->valuestring);
 			//cJSON_Delete(psub );
 			}
 		}

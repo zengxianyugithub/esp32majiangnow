@@ -33,7 +33,9 @@
 
 #include "../lvgl/lvgl.h"
 
-#include "LcdTFT22_Driver.h"
+#include "lcdTFT32.h"
+
+//#include "LcdTFT22_Driver.h"
 #include "dataHandle.h"
 
 #include "dirent.h"
@@ -82,7 +84,7 @@ unsigned char wifi_flag_nvs = 0 ;
 
 #ifdef CONFIG_EXAMPLE_IPV4
 //#define HOST_IP_ADDR "192.168.1.100"
-#define HOST_IP_ADDR "172.20.200.41"
+#define HOST_IP_ADDR "172.20.200.74"
 
 //#define HOST_IP_ADDR CONFIG_EXAMPLE_IPV4_ADDR
 
@@ -582,12 +584,45 @@ static void wait_for_ip()
     ESP_LOGI(TAG, "Connected to AP11");
 }
 
+int sock;
 
+static void tcp_client_send_task(void *pvParameters)
+{
+	char tx_buffer[512];
+	int num=0;
+	vTaskDelay(1000 / portTICK_PERIOD_MS);
+	
+	while(wifi_connected)
+	{
+		while(server_connected)
+		{
+			if(xQueueReceive(Queue_Tcpsenddata, tx_buffer, 10) == pdPASS) {
+					int err = send(sock, tx_buffer, strlen(tx_buffer), 0);
+					if (err < 0) {
+						ESP_LOGE(TAG, "Error occured during sending: errno %d", errno);
+						break;
+					}
+				
+				}
+				
+			num ++ ;
+			if(num == 40)
+			{
+				tcpdataretrun("A006");
+				num =0 ;
+			}
+				
+			vTaskDelay(50 / portTICK_PERIOD_MS);
+		}
+		vTaskDelay(1000 / portTICK_PERIOD_MS);
+	}
+	
+}
 
 static void tcp_client_task(void *pvParameters)
 {
     char rx_buffer[512];
-	char tx_buffer[512];
+	//char tx_buffer[512];
     char addr_str[128];
     int addr_family;
     int ip_protocol;
@@ -615,8 +650,8 @@ static void tcp_client_task(void *pvParameters)
         ip_protocol = IPPROTO_IPV6;
         inet6_ntoa_r(destAddr.sin6_addr, addr_str, sizeof(addr_str) - 1);
 #endif
-
-        int sock =  socket(addr_family, SOCK_STREAM, ip_protocol);
+ 
+        sock =  socket(addr_family, SOCK_STREAM, ip_protocol);
         if (sock < 0) {
             ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
             break;
@@ -631,8 +666,11 @@ static void tcp_client_task(void *pvParameters)
         ESP_LOGI(TAG, "Successfully connected");
 		server_set_stat(true);//连接状态
 		tcpdataretrun("A006");
+		vTaskDelay(10 / portTICK_PERIOD_MS);
+		tcpdataretrun("A003");
+		
         while (1) {
-			 
+			 /*
 			if(xQueueReceive(Queue_Tcpsenddata, tx_buffer, 10) == pdPASS) {
 				int err = send(sock, tx_buffer, strlen(tx_buffer), 0);
 				if (err < 0) {
@@ -640,7 +678,7 @@ static void tcp_client_task(void *pvParameters)
 					break;
 				}
 			}
-			 
+			 */
             int len = 0 ;
 			
 			 	//消息队列剩余大小
@@ -684,12 +722,12 @@ static void tcp_client_task(void *pvParameters)
         }
 		
 		server_set_stat(false);
-		
-        if (sock != -1) {
+		ESP_LOGE(TAG, "sock------>%d...",sock);
+        //if (sock != -1) {
             ESP_LOGE(TAG, "Shutting down socket and restarting...");
             shutdown(sock, 0);
             close(sock);
-        }
+        //}
     }
 	 vTaskDelay(3000 / portTICK_PERIOD_MS);
 
@@ -713,7 +751,7 @@ void ledpwm(void *pvParameters)
     /*
      * Prepare and set configuration of timers
      * that will be used by LED Controller
-     */
+     
     ledc_timer_config_t ledc_timer = {
         .duty_resolution = LEDC_TIMER_10_BIT, // resolution of PWM duty
         .freq_hz = freq_hz1,                      // frequency of PWM signal
@@ -722,7 +760,7 @@ void ledpwm(void *pvParameters)
     };
     // Set configuration of timer0 for high speed channels
     ledc_timer_config(&ledc_timer);
-
+*/
     // Prepare and set configuration of timer1 for low speed channels
     //ledc_timer.speed_mode = LEDC_LS_MODE;
    // ledc_timer.timer_num = LEDC_LS_TIMER;
@@ -740,7 +778,7 @@ void ledpwm(void *pvParameters)
      *   Note: if different channels use one timer,
      *         then frequency and bit_num of these channels
      *         will be the same
-     */
+     
     ledc_channel_config_t ledc_channel = {
         
             .channel    = LEDC_HS_CH0_CHANNEL,
@@ -758,7 +796,7 @@ void ledpwm(void *pvParameters)
    // }
 
 	ledc_fade_func_install(0);
-
+*/
 	while(wifi_flag_nvs != 3)
 	{
 		ESP_LOGI(TAG, "======.");
@@ -787,10 +825,14 @@ void ledpwm(void *pvParameters)
 	ESP_LOGI(TAG, "wait_for_con_server");
 	//wait_for_ip();
 
-	if(	xTaskCreate(tcp_client_task, "tcp_client",20480 , NULL, 5, NULL)==pdPASS)//8192
+	if(	xTaskCreate(tcp_client_task, "tcp_client",10240 , NULL, 5, NULL)==pdPASS)//8192
   		ESP_LOGI(TAG, "tcp_client create created....");
 	else
 		ESP_LOGI(TAG, "tcp_client create faile....");
+	if(	xTaskCreate(tcp_client_send_task, "tcp_client_send_task",4096 , NULL, 5, NULL)==pdPASS)//8192
+  		ESP_LOGI(TAG, "tcp_client_send_task create created....");
+	else
+		ESP_LOGI(TAG, "tcp_client_send_task create faile....");
 	 
     while (1) {
         
@@ -814,7 +856,7 @@ void ledpwm(void *pvParameters)
         //}
         vTaskDelay(LEDC_TEST_FADE_TIME / portTICK_PERIOD_MS);
 
-		*/		
+				
 		ledc_timer.freq_hz = freq_hz1;
 		ledc_timer_config(&ledc_timer);
 		pwmduty = 500 ;
@@ -822,7 +864,7 @@ void ledpwm(void *pvParameters)
         //for (ch = 0; ch < LEDC_TEST_CH_NUM; ch++) {
             ledc_set_duty(ledc_channel.speed_mode, ledc_channel.channel, pwmduty);
             ledc_update_duty(ledc_channel.speed_mode, ledc_channel.channel);
-        //}
+        //}*/
 		vTaskDelay(5000 / portTICK_PERIOD_MS);
 		
 		
@@ -897,13 +939,13 @@ void app_main()
 	//////////////////
 	
 	lv_init();
-	Lcd_Init();
+	LCD_Init();
     //Lcd_Clear(GRAY0);
-	Lcd_Clear(RED);//清屏
+	LCD_Clear(RED);//清屏
 	 
 	lv_disp_drv_t disp;
 	lv_disp_drv_init(&disp);
-	disp.disp_flush = TFT22lcd_flush;
+	disp.disp_flush = TFT32lcd_flush;
 	lv_disp_drv_register(&disp);
 	
 	vTaskDelay(50 / portTICK_RATE_MS);
@@ -911,7 +953,9 @@ void app_main()
 	////////////////////
 	//demo_create();
 	//testfill();
-	xTaskCreate(taskUI_Char, "UI_task", 2048, NULL, 7, NULL);
+	if(xTaskCreate(taskUI_Char, "UI_task", 2048, NULL, 7, NULL) == pdPASS)
+    	ESP_LOGI(TAG, "ui task created.");
+	
 	xTaskCreate(ledpwm, "ledpwmtask", 2048, NULL, 6, NULL);
 	
 	/*

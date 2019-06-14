@@ -21,8 +21,11 @@
 #include "i2s_dac.h"
 
 #include "myui.h"
+
 #include "qr_encode.h"
-#include "LcdTFT22_Driver.h"
+
+#include "lcdTFT32.h"
+//#include "LcdTFT22_Driver.h"
 #include "i2s_dac_demo.h"
 
 bool wifi_connected = false ;
@@ -42,9 +45,9 @@ lv_obj_t *status_bar,*Table_text,*dirtext,*remarks, *startup_bar;
 static lv_style_t style_bar1,status_bar_style, startup_bar_style,startup_bar_indic_style,bottom_style,wifi_icon_stayle;
 */
 
-lv_obj_t *screenmain,*lougou,*lougoutext,*text1,*text2 ,*text3,*text4,*text5,*wifi_icon,* text6,* text7,* text8,*img_coverlogo;
+lv_obj_t *screenmain,*lougou,*lougoutext,*text1,*text2 ,*text3,*text4,*text5,*wifi_icon,* text6,* text7,* text8,*img_coverlogo,* text9,* text10,* text11,* text12,* text13,* text14;
 lv_obj_t *status_bar,*Table_text,*dirtext,*remarks, *startup_bar;
-lv_style_t temp_style ,temp_style1 ,temp_style2,style_bar1,status_bar_style, startup_bar_style,startup_bar_indic_style,bottom_style,wifi_icon_stayle;
+lv_style_t temp_style ,temp_style1 ,temp_style2,style_bar1,status_bar_style, startup_bar_style,startup_bar_indic_style,bottom_style,wifi_icon_stayle,style_led;
 
 
 lv_group_t *group;
@@ -72,6 +75,7 @@ static const uint8_t bin_pixel_map[] = {
 	};
 
 */
+
 
 void displayQRCode (unsigned int startx1, unsigned int starty1,int side,uint8_t *bitdata)
 {
@@ -157,7 +161,7 @@ void displayQRCode (unsigned int startx1, unsigned int starty1,int side,uint8_t 
 	//free(qrimgstr);
 	*/
 
-	TFT22LCD_Color_Fill1_color(startx1-10,starty1-10, (startx1+side*OUT_FILE_PIXEL_PRESCALER)+10, (starty1+side*OUT_FILE_PIXEL_PRESCALER)+10,WHITE);
+	TFT32LCD_Color_Fill1_color(startx1-10,starty1-10, (startx1+side*OUT_FILE_PIXEL_PRESCALER)+10, (starty1+side*OUT_FILE_PIXEL_PRESCALER)+10,WHITE);
 	
 	//TFT22LCD_Color_Fill1_color(startx1,starty1, startx1+side*OUT_FILE_PIXEL_PRESCALER, starty1+side*OUT_FILE_PIXEL_PRESCALER,WHITE);
 	for(i=0;i<side;i++)
@@ -195,7 +199,7 @@ void draw_qrimg(char *str)
 			printf("%02x %d ",bitdata[i],i);
 		printf("size=%d\r\n",qrsize);
 		*/
-		displayQRCode (LV_HOR_RES/2-50,64,qrsize,bitdata);//30
+		displayQRCode (LV_HOR_RES/2-50,100,qrsize,bitdata);//30
 		vTaskDelay(10 / portTICK_PERIOD_MS);
 
 }
@@ -301,6 +305,7 @@ void sys_variabletest(void)
 void style_init(void)
 {
 	
+	
 	lv_style_copy(&style_bar1, &lv_style_scr);
 	style_bar1.body.main_color = LV_COLOR_MAKE(0xEE,0x40,0x10);
 	style_bar1.body.grad_color = LV_COLOR_MAKE(0xEE,0x40,0x10);
@@ -327,7 +332,7 @@ void style_init(void)
 
 */
 	lv_style_copy(&wifi_icon_stayle,&status_bar_style);
-	wifi_icon_stayle.text.font = &lv_font_dejavu_20;
+	wifi_icon_stayle.text.font = &lv_font_dejavu_30;
 	wifi_icon_stayle.text.color = LV_COLOR_WHITE;
 
     lv_style_copy(&bottom_style, &lv_style_scr);
@@ -349,6 +354,19 @@ void style_init(void)
     startup_bar_indic_style.body.padding.hor = 3;           /*Make the indicator a little bit smaller*/
     startup_bar_indic_style.body.padding.ver = 3;
 
+	
+	/*Create a style for the LED*/
+    
+    lv_style_copy(&style_led, &lv_style_pretty_color);
+    style_led.body.radius = LV_RADIUS_CIRCLE;
+    style_led.body.main_color = LV_COLOR_WHITE;
+    style_led.body.grad_color = LV_COLOR_WHITE;
+    style_led.body.border.color = LV_COLOR_WHITE;
+    style_led.body.border.width = 1;
+    style_led.body.border.opa = LV_OPA_0;
+    style_led.body.shadow.color =LV_COLOR_WHITE;
+    style_led.body.shadow.width = 2;
+	
 	sys_variableinit();
     sys_variabletest();//测试
     //bottom_style.text.font = &myfont20;
@@ -372,7 +390,7 @@ void drawlogo (void)
 	clear_screenmain();
 	
     startup_bar  = lv_bar_create(screenmain, NULL);
-    lv_obj_set_size(startup_bar, lv_obj_get_width(screenmain)-20, 10);
+    lv_obj_set_size(startup_bar, lv_obj_get_width(screenmain)-40, 15);
     //lv_obj_align(startup_bar, NULL, LV_ALIGN_IN_TOP_RIGHT, -20, 30);
     lv_bar_set_value(startup_bar, 0);
 
@@ -438,7 +456,7 @@ void drawBottom (void)
     remarks = lv_label_create(status_bar, NULL);
     //lv_obj_set_size(remarks, 100, STATUS_BAR_VER);//文本框大小
     //lv_obj_set_pos(remarks, 0, 2);
-    lv_obj_align(remarks, NULL, LV_ALIGN_IN_TOP_RIGHT, -50, 0);//左对齐
+    lv_obj_align(remarks, NULL, LV_ALIGN_IN_TOP_RIGHT, 0, 0);//对齐
     lv_label_set_style(remarks, &status_bar_style);
     //lv_label_set_long_mode(remarks, LV_LABEL_LONG_DOT);
     lv_label_set_text(remarks," ");
@@ -449,7 +467,7 @@ void drawBottom (void)
 	//
 	lv_label_set_style(wifi_icon, &wifi_icon_stayle);
 	//lv_obj_set_pos(wifi_icon, LV_HOR_RES-30, 5);
-    lv_obj_align(wifi_icon, NULL, LV_ALIGN_IN_TOP_RIGHT, -10, 4);//左对齐
+    lv_obj_align(wifi_icon, NULL, LV_ALIGN_IN_TOP_RIGHT, -90, 4);//左对齐
 
     //lv_label_set_text(wifi_icon,SYMBOL_WIFI""SYMBOL_WIFI);
     //lv_label_set_text(wifi_icon, majiang.wifi_connect_state ?  (majiang.server_connect_state ? SYMBOL_WIFI""SYMBOL_OK : SYMBOL_WIFI""SYMBOL_WARNING) : SYMBOL_WARNING""SYMBOL_WARNING);
@@ -543,7 +561,7 @@ void drawsmart1 (void)
 
 	lv_label_set_style(text1, &status_bar_style);
 	//lv_obj_set_pos(text1, LV_HOR_RES-30, 5);
-    lv_obj_align(text1, NULL, LV_ALIGN_IN_TOP_MID, -50, 0);//左对齐
+    lv_obj_align(text1, NULL, LV_ALIGN_IN_TOP_MID, -70, 0);//左对齐
 
     lv_label_set_text(text1,"请扫码加入竞赛");
 
@@ -621,13 +639,13 @@ void drawptotal (void)
     text2 = lv_label_create(screenmain, NULL);
 	lv_label_set_style(text2, &status_bar_style);
 	//lv_obj_set_pos(text2, LV_HOR_RES-30, 5);
-    lv_obj_align(text2, NULL, LV_ALIGN_IN_TOP_RIGHT, -50, 0);
+    lv_obj_align(text2, NULL, LV_ALIGN_IN_TOP_RIGHT, -80, 0);
     lv_label_set_text(text2,"累计得分");
 
     text4 = lv_label_create(screenmain, NULL);
 	lv_label_set_style(text4, &status_bar_style);
 	//lv_obj_set_pos(text4, LV_HOR_RES-30, 5);
-    lv_obj_align(text4, NULL, LV_ALIGN_IN_TOP_RIGHT, -lv_obj_get_width(screenmain)/5, lv_obj_get_height(screenmain)/3);
+    lv_obj_align(text4, NULL, LV_ALIGN_IN_TOP_RIGHT, -lv_obj_get_width(screenmain)/6, lv_obj_get_height(screenmain)/3);
     switch(majiang.position)
     {
         case DIR_EAST  :
@@ -685,7 +703,7 @@ void drawranking (void)
     text1 = lv_label_create(screenmain, NULL);
 	lv_label_set_style(text1, &status_bar_style);
 	//lv_obj_set_pos(text1, LV_HOR_RES-30, 5);
-    lv_obj_align(text1, NULL, LV_ALIGN_IN_TOP_LEFT, 10, 0);//左对齐
+    lv_obj_align(text1, NULL, LV_ALIGN_IN_TOP_LEFT, 40, 0);//左对齐
     lv_label_set_text(text1,"标准分");
 
 
@@ -699,7 +717,7 @@ void drawranking (void)
     text2 = lv_label_create(screenmain, NULL);
 	lv_label_set_style(text2, &status_bar_style);
 	//lv_obj_set_pos(text2, LV_HOR_RES-30, 5);
-    lv_obj_align(text2, NULL, LV_ALIGN_IN_TOP_RIGHT, -50, 0);
+    lv_obj_align(text2, NULL, LV_ALIGN_IN_TOP_RIGHT, -60, 0);
     lv_label_set_text(text2,"比赛分");
 
 
@@ -712,45 +730,45 @@ void drawranking (void)
     txt1[0] = lv_label_create(screenmain, NULL);
 	lv_label_set_style(txt1[0], &status_bar_style);
 	//lv_obj_set_pos(txt1[0], LV_HOR_RES-30, 5);
-    lv_obj_align(txt1[0], NULL, LV_ALIGN_IN_TOP_LEFT, 50, screenheight/5);
+    lv_obj_align(txt1[0], NULL, LV_ALIGN_IN_TOP_LEFT, 80, screenheight/5);
     lv_label_set_text(txt1[0],(char*)majiang.standard_score[0]);
     txt1[1] = lv_label_create(screenmain, NULL);
 	lv_label_set_style(txt1[1], &status_bar_style);
 	//lv_obj_set_pos(txt1[1], LV_HOR_RES-30, 5);
-    lv_obj_align(txt1[1], NULL, LV_ALIGN_IN_TOP_LEFT, screenwidth-80, screenheight/5);
+    lv_obj_align(txt1[1], NULL, LV_ALIGN_IN_TOP_LEFT, screenwidth-110, screenheight/5);
     lv_label_set_text(txt1[1],(char*)majiang.match_score[0]);
 
      txt1[2] = lv_label_create(screenmain, NULL);
 	lv_label_set_style(txt1[2], &status_bar_style);
 	//lv_obj_set_pos(txt1[2], LV_HOR_RES-30, 5);
-    lv_obj_align(txt1[2], NULL, LV_ALIGN_IN_TOP_LEFT, 50, screenheight/5*2);
+    lv_obj_align(txt1[2], NULL, LV_ALIGN_IN_TOP_LEFT, 80, screenheight/5*2);
     lv_label_set_text(txt1[2],(char*)majiang.standard_score[1]);
     txt1[3] = lv_label_create(screenmain, NULL);
 	lv_label_set_style(txt1[3], &status_bar_style);
 	//lv_obj_set_pos(txt1[3], LV_HOR_RES-30, 5);
-    lv_obj_align(txt1[3], NULL, LV_ALIGN_IN_TOP_LEFT, screenwidth-80, screenheight/5*2);
+    lv_obj_align(txt1[3], NULL, LV_ALIGN_IN_TOP_LEFT, screenwidth-110, screenheight/5*2);
     lv_label_set_text(txt1[3],(char*)majiang.match_score[1]);
 
     txt1[4] = lv_label_create(screenmain, NULL);
 	lv_label_set_style(txt1[4], &status_bar_style);
 	//lv_obj_set_pos(txt1[2], LV_HOR_RES-30, 5);
-    lv_obj_align(txt1[4], NULL, LV_ALIGN_IN_TOP_LEFT, 50, screenheight/5*3);
+    lv_obj_align(txt1[4], NULL, LV_ALIGN_IN_TOP_LEFT, 80, screenheight/5*3);
     lv_label_set_text(txt1[4],(char*)majiang.standard_score[2]);
     txt1[5] = lv_label_create(screenmain, NULL);
 	lv_label_set_style(txt1[5], &status_bar_style);
 	//lv_obj_set_pos(txt1[3], LV_HOR_RES-30, 5);
-    lv_obj_align(txt1[5], NULL, LV_ALIGN_IN_TOP_LEFT, screenwidth-80, screenheight/5*3);
+    lv_obj_align(txt1[5], NULL, LV_ALIGN_IN_TOP_LEFT, screenwidth-110, screenheight/5*3);
     lv_label_set_text(txt1[5],(char*)majiang.match_score[2]);
 
     txt1[6] = lv_label_create(screenmain, NULL);
 	lv_label_set_style(txt1[6], &status_bar_style);
 	//lv_obj_set_pos(txt1[2], LV_HOR_RES-30, 5);
-    lv_obj_align(txt1[6], NULL, LV_ALIGN_IN_TOP_LEFT, 50,  screenheight/5*4);
+    lv_obj_align(txt1[6], NULL, LV_ALIGN_IN_TOP_LEFT, 80,  screenheight/5*4);
     lv_label_set_text(txt1[6],(char*)majiang.standard_score[3]);
     txt1[7] = lv_label_create(screenmain, NULL);
 	lv_label_set_style(txt1[7], &status_bar_style);
 	//lv_obj_set_pos(txt1[3], LV_HOR_RES-30, 5);
-    lv_obj_align(txt1[7], NULL, LV_ALIGN_IN_TOP_LEFT, screenwidth -80 ,  screenheight/5*4);
+    lv_obj_align(txt1[7], NULL, LV_ALIGN_IN_TOP_LEFT, screenwidth -110 ,  screenheight/5*4);
     lv_label_set_text(txt1[7],(char*)majiang.match_score[3]);
 
 
@@ -786,6 +804,14 @@ void drawranking (void)
 
     }
 
+	char tmp_strv[10];
+
+	char v11 = getmyVolumePercentage();
+	if(v11 == 0) sprintf(tmp_strv, "0%%");//
+	else sprintf(tmp_strv, "%i%%",  v11);//
+	//lv_label_set_text(volume, tmp_str);
+	lv_label_set_text(remarks, tmp_strv);
+	
     majiang.current_page = PAGE_RANKING ;
 }
 
@@ -804,20 +830,20 @@ void drawscore (char t1[][MAXCHARNUM])
     text2 = lv_label_create(screenmain, NULL);
 	lv_label_set_style(text2, &status_bar_style);
 	//lv_obj_set_pos(text2, LV_HOR_RES-30, 5);
-    lv_obj_align(text2, NULL, LV_ALIGN_IN_BOTTOM_LEFT,10, -10);
+    lv_obj_align(text2, NULL, LV_ALIGN_IN_BOTTOM_LEFT,10, -5);
     lv_label_set_text(text2,"确认分数");
 
     text3 = lv_label_create(screenmain, NULL);
 	lv_label_set_style(text3, &status_bar_style);
 	//lv_obj_set_pos(text3, LV_HOR_RES-30, 5);
-    lv_obj_align(text3, NULL, LV_ALIGN_IN_BOTTOM_RIGHT,-20, -10);
+    lv_obj_align(text3, NULL, LV_ALIGN_IN_BOTTOM_RIGHT,-20, -5);
     lv_label_set_text(text3,"改分");
 
 
     text4 = lv_label_create(screenmain, NULL);
 	lv_label_set_style(text4, &status_bar_style);
 	//lv_obj_set_pos(text4, LV_HOR_RES-30, 5);
-    lv_obj_align(text4, NULL, LV_ALIGN_IN_BOTTOM_MID,10, -10);
+    lv_obj_align(text4, NULL, LV_ALIGN_IN_BOTTOM_MID,20, -5);
 
     char str11[5];
     unsigned char temp = 0 ,temp1 = 0 ;
@@ -931,8 +957,8 @@ void drawscore (char t1[][MAXCHARNUM])
 
             text6 = lv_obj_create(screenmain, txtobj[0]);
             lv_obj_set_style(text6, &status_bar_style);
-            lv_obj_set_size(text6,20, 20);
-            lv_obj_align(text6, NULL, LV_ALIGN_IN_BOTTOM_RIGHT,0,-35);
+            lv_obj_set_size(text6,25, 40);
+            lv_obj_align(text6, NULL, LV_ALIGN_IN_BOTTOM_RIGHT,0,-40);
 
             text7 = lv_label_create(text6, NULL);
             lv_label_set_style(text7, &status_bar_style);
@@ -943,8 +969,8 @@ void drawscore (char t1[][MAXCHARNUM])
             text5 = lv_label_create(screenmain, NULL);
             lv_label_set_style(text5, &status_bar_style);
             //lv_obj_set_pos(text5, LV_HOR_RES-30, 5);
-            lv_obj_align(text5, NULL, LV_ALIGN_IN_BOTTOM_RIGHT,30, -55);
-            sprintf(str11,"%d",majiang.current_informnum);//当前流水页面
+            lv_obj_align(text5, NULL, LV_ALIGN_IN_BOTTOM_RIGHT,15, -80);
+            sprintf(str11,"  %d",majiang.current_informnum);//当前流水页面
             lv_label_set_text(text5,str11);
         }
     }
@@ -1301,7 +1327,7 @@ void drawmodify1 (void)
 
     lv_obj_align(text1, NULL, LV_ALIGN_IN_TOP_MID, -30, 10);//左对齐
     lv_label_set_style(text1, &status_bar_style);
-    lv_label_set_text(text1,"#ff0000 也呼叫裁判#");
+    lv_label_set_text(text1,"#ff0000 已呼叫裁判#");
 
     text2 = lv_label_create(screenmain, NULL);
     lv_label_set_recolor(text2,true);
@@ -1329,6 +1355,208 @@ void drawmodify1 (void)
 
 	majiang.current_page = PAGE_MODIFY1 ;
 
+}
+
+void drawpoint1_point2 (unsigned char point1, unsigned char point2)
+{
+
+    //unsigned char point1 = 2;
+    //unsigned char point2 = 2;
+	
+    clear_screenmain();
+    
+
+
+    /*Create a LED and switch it ON*/
+
+    text13 = lv_obj_create(screenmain, NULL);
+    lv_obj_set_style(text13, &lv_style_pretty_color);
+    lv_obj_set_size(text13, 100, 100);
+    lv_obj_align(text13, NULL, LV_ALIGN_IN_TOP_MID, -60, 60);
+    text14 = lv_obj_create(screenmain, text13);
+    lv_obj_align(text14, NULL, LV_ALIGN_IN_TOP_MID, 60, 60);
+
+    text1  = lv_led_create(text13, NULL);
+    lv_obj_set_style(text1, &style_led);
+
+    lv_obj_set_size(text1, 20, 20);
+
+   // unsigned char backsize = lv_obj_get_width(text13);
+   // unsigned char whitesize = lv_obj_get_width(text1);
+
+
+    switch(point1)
+    {
+    case 1:
+        lv_obj_set_pos(text1,40,40);
+        lv_led_on(text1);
+        break;
+    case 2:
+        //text1  = lv_led_create(text13, text1);
+        lv_obj_set_pos(text1,40,25);
+        lv_led_on(text1);
+        text2  = lv_led_create(text13, text1);
+        lv_obj_set_pos(text2,40,55);
+        lv_led_on(text2);
+        break;
+    case 3:
+        //text2  = lv_led_create(text13, text1);
+        lv_obj_set_pos(text1,40,40);
+        lv_led_on(text1);
+        text2  = lv_led_create(text13, text1);
+        lv_obj_set_pos(text2,18,18);
+        lv_led_on(text2);
+        text3  = lv_led_create(text13, text1);
+        lv_obj_set_pos(text3,60,60);
+        lv_led_on(text3);
+        break;
+    case 4:
+        //text8  = lv_led_create(text13, text1);
+        lv_obj_set_pos(text1,18,18);
+        lv_led_on(text1);
+        text2  = lv_led_create(text13, text1);
+        lv_obj_set_pos(text2,60,60);
+        lv_led_on(text2);
+        text3  = lv_led_create(text13, text1);
+        lv_obj_set_pos(text3,18,60);
+        lv_led_on(text3);
+        text4  = lv_led_create(text13, text1);
+        lv_obj_set_pos(text4,60,18);
+        lv_led_on(text4);
+        break;
+    case 5:
+        //text7  = lv_led_create(text13, text1);
+        lv_obj_set_pos(text1,40,40);
+        lv_led_on(text1);
+        text2  = lv_led_create(text13, text1);
+        lv_obj_set_pos(text2,18,18);
+        lv_led_on(text2);
+        text3  = lv_led_create(text13, text1);
+        lv_obj_set_pos(text3,60,60);
+        lv_led_on(text3);
+        text4  = lv_led_create(text13, text1);
+        lv_obj_set_pos(text4,18,60);
+        lv_led_on(text4);
+        text5  = lv_led_create(text13, text1);
+        lv_obj_set_pos(text5,60,18);
+        lv_led_on(text5);
+        break;
+    case 6:
+        //text7  = lv_led_create(text13, text1);
+        lv_obj_set_pos(text1,25,15);
+        lv_led_on(text1);
+        text2  = lv_led_create(text13, text1);
+        lv_obj_set_pos(text2,25,40);
+        lv_led_on(text2);
+        text3  = lv_led_create(text13, text1);
+        lv_obj_set_pos(text3,25,65);
+        lv_led_on(text3);
+        text4  = lv_led_create(text13, text1);
+        lv_obj_set_pos(text4,55,15);
+        lv_led_on(text4);
+        text5  = lv_led_create(text13, text1);
+        lv_obj_set_pos(text5,55,40);
+        lv_led_on(text5);
+        text6  = lv_led_create(text13, text1);
+        lv_obj_set_pos(text6,55,65);
+        lv_led_on(text6);
+        break;
+    default:
+        break;
+    }
+
+    switch(point2)
+    {
+    case 1:
+        text7  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text7,40,40);
+        lv_led_on(text7);
+        break;
+    case 2:
+        text7  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text7,40,25);
+        lv_led_on(text7);
+        text8  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text8,40,55);
+        lv_led_on(text8);
+        break;
+    case 3:
+        text7  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text7,40,40);
+        lv_led_on(text7);
+        text8  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text8,18,18);
+        lv_led_on(text8);
+        text9  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text9,60,60);
+        lv_led_on(text9);
+        break;
+    case 4:
+        text8  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text8,18,18);
+        lv_led_on(text8);
+        text9  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text9,60,60);
+        lv_led_on(text9);
+        text10  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text10,18,60);
+        lv_led_on(text10);
+        text11  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text11,60,18);
+        lv_led_on(text11);
+        break;
+    case 5:
+        text7  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text7,40,40);
+        lv_led_on(text7);
+        text8  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text8,18,18);
+        lv_led_on(text8);
+        text9  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text9,60,60);
+        lv_led_on(text9);
+        text10  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text10,18,60);
+        lv_led_on(text10);
+        text11  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text11,60,18);
+        lv_led_on(text11);
+        break;
+    case 6:
+        text7  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text7,25,15);
+        lv_led_on(text7);
+        text8  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text8,25,40);
+        lv_led_on(text8);
+        text9  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text9,25,65);
+        lv_led_on(text9);
+        text10  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text10,55,15);
+        lv_led_on(text10);
+        text11  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text11,55,40);
+        lv_led_on(text11);
+        text12  = lv_led_create(text14, text1);
+        lv_obj_set_pos(text12,55,65);
+        lv_led_on(text12);
+        break;
+    default:
+        break;
+    }
+
+
+
+
+
+    /*Copy the previous LED and set a brightness*/
+
+
+
+
+
+    majiang.current_page = PAGE_POINT12 ;
 }
 
 
@@ -1464,7 +1692,7 @@ void taskUI_Char(void *parameter) {
 	//lv_theme_set_current(th);
 	//ESP_LOGE(TAG, "enter taskui");
 	//char arrtext[6][MAXCHARNUM]={"胡：自摸 -2","杠：点炮 -22","碰： +8 东","胡： +2 西","好： +2 东","不阿： +2 东"};
-
+	//unsigned char point = 1 ;
 	//vTaskDelay(2000 / portTICK_RATE_MS);
 	style_init();
 	drawBottom ();
@@ -1505,10 +1733,23 @@ void taskUI_Char(void *parameter) {
 		drawmodify();
 		printf("page %d\r\n",majiang.current_page);
 		*/
+		
+		
+		
+		
 		ESP_LOGI("== ==", "[APP] Free memory: %d bytes", esp_get_free_heap_size());
 		
 		vTaskDelay(2000 / portTICK_RATE_MS);
-		lv_label_set_text(wifi_icon, wifi_connected ?  (server_connected ? SYMBOL_WIFI""SYMBOL_OK : SYMBOL_WIFI""SYMBOL_WARNING) : SYMBOL_WARNING""SYMBOL_WARNING);
+
+		//drawpoint1_point2( (point%6)+1,(point%6)+1);
+		//point++;
+		if(getmyVolumePercentage())
+			lv_label_set_text(wifi_icon, wifi_connected ?  (server_connected ? SYMBOL_WIFI""SYMBOL_OK""SYMBOL_VOLUME_MAX : SYMBOL_WIFI""SYMBOL_WARNING""SYMBOL_VOLUME_MAX) : SYMBOL_WARNING""SYMBOL_WARNING""SYMBOL_VOLUME_MAX);
+		
+		else
+			lv_label_set_text(wifi_icon, wifi_connected ?  (server_connected ? SYMBOL_WIFI""SYMBOL_OK""SYMBOL_MUTE : SYMBOL_WIFI""SYMBOL_WARNING""SYMBOL_MUTE) :SYMBOL_WARNING""SYMBOL_WARNING""SYMBOL_MUTE);
+		
+		
 		/*
 		if(wifi_connected&server_connected)
 			lv_label_set_text(wifi_icon,SYMBOL_WIFI""SYMBOL_OK);

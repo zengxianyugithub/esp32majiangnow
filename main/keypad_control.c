@@ -10,7 +10,7 @@
 #include "nvs_flash.h"
 #include "nvs.h"
 
-
+#include <time.h>
 
 #include "esp_wifi.h"
 
@@ -19,10 +19,11 @@
 #include "esp_log.h"
 #include "../lvgl/lv_core/lv_group.h"
 #include "../lvgl/lv_core/lv_indev.h"
-
-
+#include "dataHandle.h"
+#include "myui.h"
 
 #include "keypad_control.h"
+#include "i2s_dac_demo.h"
 
 
 /*
@@ -41,10 +42,10 @@ TickType_t key_last_tick;
 #define GPIO_INPUT_IO_5     23
 #define GPIO_INPUT_IO_4     27
 #define GPIO_INPUT_IO_3     32
-#define GPIO_INPUT_IO_2     33
-#define GPIO_INPUT_IO_1     34
-#define GPIO_INPUT_IO_0     35
-#define GPIO_INPUT_PIN_SEL  ((1ULL<<GPIO_INPUT_IO_0) | (1ULL<<GPIO_INPUT_IO_1))
+#define GPIO_INPUT_IO_2     34
+#define GPIO_INPUT_IO_1     35
+#define GPIO_INPUT_IO_0     33
+#define GPIO_INPUT_PIN_SEL  ((1ULL<<GPIO_INPUT_IO_0) | (1ULL<<GPIO_INPUT_IO_1)| (1ULL<<GPIO_INPUT_IO_2)| (1ULL<<GPIO_INPUT_IO_3))
 //| (1ULL<<GPIO_INPUT_IO_2)| (1ULL<<GPIO_INPUT_IO_3)| (1ULL<<GPIO_INPUT_IO_4)| (1ULL<<GPIO_INPUT_IO_5))
 #define ESP_INTR_FLAG_DEFAULT 0
 
@@ -130,6 +131,113 @@ void taskScanKey(void *patameter) {
 				vTaskDelay(10 / portTICK_RATE_MS);
 			}
         }
+		
+		if(gpio_get_level(GPIO_INPUT_IO_1)==0) {
+			vTaskDelay(10 / portTICK_RATE_MS);
+			if(gpio_get_level(GPIO_INPUT_IO_1)==0) {
+            	printf("GPIO[%d] intr, val 0: \n", GPIO_INPUT_IO_1);
+				
+				while(!gpio_get_level(GPIO_INPUT_IO_1)) vTaskDelay(10 / portTICK_RATE_MS);
+				
+				if(majiang.current_page == PAGE_PTOTAL)
+				{
+					drawranking ();//统计分数页面
+				}
+				else if(majiang.current_page == PAGE_RANKING)
+				{
+					drawptotal ();//常显示界面
+				}
+				else if(majiang.current_page == PAGE_SCORE)
+				{
+					tcpdataretrunA011_keyv("N");//返回要求改分
+				}
+				else if(majiang.current_page == PAGE_MODIFY)
+				{
+					tcpdataretrunA011_keyv("N");//返回要求改分
+				}
+				
+				vTaskDelay(10 / portTICK_RATE_MS);
+				}
+        
+		}
+		if(gpio_get_level(GPIO_INPUT_IO_2)==0) {
+			vTaskDelay(10 / portTICK_RATE_MS);
+			if(gpio_get_level(GPIO_INPUT_IO_2)==0) {
+            	printf("GPIO[%d] intr, val 0: \n", GPIO_INPUT_IO_2);
+				
+				while(!gpio_get_level(GPIO_INPUT_IO_2)) vTaskDelay(10 / portTICK_RATE_MS);
+				
+				if(majiang.current_page == PAGE_SCORE)
+				{
+					tcpdataretrunA011_keyv("Y");//分数确认没问题
+				}
+				else if(majiang.current_page == PAGE_MODIFY)
+				{
+					tcpdataretrunA011_keyv("Y");//分数确认没问题
+				}
+				else if(majiang.current_page == PAGE_MODIFY1)
+				{
+					tcpdataretrunA011_keyv("cancel");//取消呼叫裁判
+				}
+				
+				
+				
+				
+				else if(majiang.current_page == PAGE_RANKING)
+				{
+					if(getmyVolumePercentage() <= 20) setmyVolume(0);
+					else setmyVolume(getmyVolumePercentage() - 20);
+					drawranking ();//统计分数页面
+				}
+
+				
+				
+				vTaskDelay(10 / portTICK_RATE_MS);
+				}
+        }
+		
+		
+		if(gpio_get_level(GPIO_INPUT_IO_3)==0) {
+			vTaskDelay(10 / portTICK_RATE_MS);
+			if(gpio_get_level(GPIO_INPUT_IO_3)==0) {
+            	printf("GPIO[%d] intr, val 0: \n", GPIO_INPUT_IO_3);
+				
+				while(!gpio_get_level(GPIO_INPUT_IO_3)) vTaskDelay(10 / portTICK_RATE_MS);
+				
+				if(majiang.current_page == PAGE_SCORE)
+				{
+					if(majiang.inform_nums>4)
+					{
+						majiang.current_informnum++;
+						tcpdataretrun("A005");//下一页流水
+						printf("majiang.current_informnum = %d\n",majiang.current_informnum);
+						
+					}
+					
+				}
+				else if(majiang.current_page == PAGE_RANKING)//加音量
+				{
+					if(getmyVolumePercentage() >= 80) setmyVolume(100);
+					else setmyVolume(getmyVolumePercentage() + 20);
+					drawranking ();//统计分数页面
+				}
+				
+				else if(majiang.current_page == PAGE_POINT12)//拿牌点数
+				{
+					int pointtemp = rand() % 6 + 1;
+					majiang.point1 = pointtemp;
+					pointtemp = rand() % 6 + 1;
+					majiang.point2 = pointtemp;
+					drawpoint1_point2 (majiang.point1, majiang.point2);
+					tcpdataretrunA012();
+					vTaskDelay(1000 / portTICK_RATE_MS);
+				}
+				
+				
+				vTaskDelay(10 / portTICK_RATE_MS);
+				}
+        }
+		
 		vTaskDelay(10 / portTICK_RATE_MS);
 /*
 		if(gpio_get_level(GPIO_INPUT_IO_1)==1) {
