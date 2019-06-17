@@ -84,7 +84,7 @@ unsigned char wifi_flag_nvs = 0 ;
 
 #ifdef CONFIG_EXAMPLE_IPV4
 //#define HOST_IP_ADDR "192.168.1.100"
-#define HOST_IP_ADDR "172.20.200.74"
+#define HOST_IP_ADDR "172.20.200.25"
 
 //#define HOST_IP_ADDR CONFIG_EXAMPLE_IPV4_ADDR
 
@@ -939,13 +939,15 @@ void app_main()
 	//////////////////
 	
 	lv_init();
-	LCD_Init();
+	///LCD_Init();
+	lcdspi_init();
     //Lcd_Clear(GRAY0);
-	LCD_Clear(RED);//清屏
-	 
+	///LCD_Clear(RED);//清屏
+	
 	lv_disp_drv_t disp;
 	lv_disp_drv_init(&disp);
-	disp.disp_flush = TFT32lcd_flush;
+	///disp.disp_flush = TFT32lcd_flush;
+	disp.disp_flush = TFT32lcdspi_flush;
 	lv_disp_drv_register(&disp);
 	
 	vTaskDelay(50 / portTICK_RATE_MS);

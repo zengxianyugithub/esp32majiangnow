@@ -462,7 +462,7 @@ void play_audio_demo(char audio_num)
 esp_err_t i2s_init()
 {
     example_i2s_init();
-	setmyVolume(60) ;
+	setmyVolume(40) ;
 	//example_set_file_play_mode();
 	//play_audio_demo(AUDIO_1);
     //esp_log_level_set("I2S", ESP_LOG_INFO);

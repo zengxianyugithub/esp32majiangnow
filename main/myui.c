@@ -161,7 +161,8 @@ void displayQRCode (unsigned int startx1, unsigned int starty1,int side,uint8_t 
 	//free(qrimgstr);
 	*/
 
-	TFT32LCD_Color_Fill1_color(startx1-10,starty1-10, (startx1+side*OUT_FILE_PIXEL_PRESCALER)+10, (starty1+side*OUT_FILE_PIXEL_PRESCALER)+10,WHITE);
+	///TFT32LCD_Color_Fill1_color(startx1-10,starty1-10, (startx1+side*OUT_FILE_PIXEL_PRESCALER)+10, (starty1+side*OUT_FILE_PIXEL_PRESCALER)+10,WHITE);
+	fill_color(startx1-10,starty1-10, (startx1+side*OUT_FILE_PIXEL_PRESCALER)+10, (starty1+side*OUT_FILE_PIXEL_PRESCALER)+10,WHITE);
 	
 	//TFT22LCD_Color_Fill1_color(startx1,starty1, startx1+side*OUT_FILE_PIXEL_PRESCALER, starty1+side*OUT_FILE_PIXEL_PRESCALER,WHITE);
 	for(i=0;i<side;i++)
@@ -176,7 +177,8 @@ void displayQRCode (unsigned int startx1, unsigned int starty1,int side,uint8_t 
 				{
 					for(n=0;n<OUT_FILE_PIXEL_PRESCALER;n++)
 					{
-						Gui_DrawPoint(startx1+(OUT_FILE_PIXEL_PRESCALER*i+l),starty1+(OUT_FILE_PIXEL_PRESCALER*j+n),BLACK);	
+						///Gui_DrawPoint(startx1+(OUT_FILE_PIXEL_PRESCALER*i+l),starty1+(OUT_FILE_PIXEL_PRESCALER*j+n),BLACK);	
+						drawPixel(startx1+(OUT_FILE_PIXEL_PRESCALER*i+l),starty1+(OUT_FILE_PIXEL_PRESCALER*j+n),BLACK);	
 					}
 				}
 			}
@@ -397,7 +399,7 @@ void drawlogo (void)
     lv_bar_set_style(startup_bar, LV_BAR_STYLE_BG, &startup_bar_style);
     lv_bar_set_style(startup_bar, LV_BAR_STYLE_INDIC, &startup_bar_indic_style);
     //lv_obj_align(startup_bar, bar1, LV_ALIGN_OUT_BOTTOM_MID, 0, 30); /*Align below 'bar1'*/
-    lv_bar_set_value_anim(startup_bar, 100, 3000);//进度条动画
+    ///lv_bar_set_value_anim(startup_bar, 100, 3000);//进度条动画
 
     lougoutext = lv_label_create(screenmain, NULL);
     lv_obj_set_size(lougoutext, lv_obj_get_width(screenmain)-20, STATUS_BAR_VER*2);//文本框大小
@@ -1215,7 +1217,7 @@ void drawwaiting (void)
 		lv_label_set_long_mode(text8,LV_LABEL_LONG_BREAK);
 		lv_label_set_style(text8, &temp_style2);
 		lv_obj_align(text8, NULL, LV_ALIGN_CENTER,0, 0);
-		lv_label_set_text(text8,"待确");
+		lv_label_set_text(text8,"异议");
 		
 	}
 	else if(majiang.current_keyV[3] == KEYV_U)
@@ -1365,7 +1367,13 @@ void drawpoint1_point2 (unsigned char point1, unsigned char point2)
 	
     clear_screenmain();
     
-
+	lougoutext = lv_label_create(screenmain, NULL);
+    //lv_obj_set_pos(lougoutext, LV_HOR_RES-30, 5);
+	lv_obj_set_size(lougoutext,30,50);
+	lv_label_set_style(lougoutext, &status_bar_style);
+	lv_label_set_long_mode(lougoutext,LV_LABEL_LONG_BREAK);
+	lv_obj_align(lougoutext, NULL, LV_ALIGN_IN_TOP_LEFT, 0, 10);//左对齐
+	lv_label_set_text(lougoutext,"摇\n一\n摇");
 
     /*Create a LED and switch it ON*/
 

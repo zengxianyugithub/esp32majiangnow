@@ -225,6 +225,17 @@ void taskScanKey(void *patameter) {
 				else if(majiang.current_page == PAGE_POINT12)//拿牌点数
 				{
 					int pointtemp = rand() % 6 + 1;
+					for(int itemp = 0;itemp<6;itemp++)
+					{
+						pointtemp = rand() % 6 + 1;
+						majiang.point1 = pointtemp;
+						pointtemp = rand() % 6 + 1;
+						majiang.point2 = pointtemp;
+						drawpoint1_point2 (majiang.point1, majiang.point2);
+						vTaskDelay(100 / portTICK_RATE_MS);
+					}
+					
+					pointtemp = rand() % 6 + 1;
 					majiang.point1 = pointtemp;
 					pointtemp = rand() % 6 + 1;
 					majiang.point2 = pointtemp;
